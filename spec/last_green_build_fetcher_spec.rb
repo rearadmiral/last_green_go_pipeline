@@ -24,6 +24,14 @@ end
 
 describe GoCD::LastGreenBuildFetcher do
 
+  let(:cache_file) do
+    File.expand_path('./.last_green_build_fetcher_cache')
+  end
+
+  before(:each) do
+    FileUtils.rm_f cache_file
+  end
+
   describe "with mock go api" do
 
     before(:each) do
@@ -37,14 +45,45 @@ describe GoCD::LastGreenBuildFetcher do
       end
     end
 
+    describe "with no pipeline history" do
+
+      before(:each) do
+        MockGoApiClient.canned_return_value = {
+          pipelines: [],
+          latest_atom_entry_id: 'ignore'
+        }
+      end
+
+      it "returns nil" do
+        fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+        expect(fetcher.fetch).to be nil
+      end
+
+    end
+
+    describe "with no green builds" do
+
+      before(:each) do
+        MockGoApiClient.canned_return_value = {
+          pipelines: [red_pipeline],
+          latest_atom_entry_id: 'ignore'
+        }
+      end
+
+      it "returns nils" do
+        fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+        expect(fetcher.fetch).to be nil
+      end
+
+    end
+
     it "finds most recent passing stage" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse,
                                           latest_atom_entry_id: 'ignore'
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
-      last_green_build_time = fetcher.fetch
-      expect(last_green_build_time).to eq Time.parse('2013-02-11 14:19:00')
+      expect(fetcher.fetch).to eq Time.parse('2013-02-11 14:19:00')
     end
 
     after(:each) do
@@ -57,8 +96,6 @@ describe GoCD::LastGreenBuildFetcher do
     end
 
   end
-
-  let(:cache_file) { File.expand_path(File.join(File.dirname(__FILE__), '..', '.go_watchdog_cache')) }
 
   let(:red_pipeline) do
     OpenStruct.new.tap do |pipeline|
@@ -88,9 +125,5 @@ describe GoCD::LastGreenBuildFetcher do
     end
   end
 
-
-  after(:each) do
-    FileUtils.rm_f cache_file
-  end
 
 end

@@ -11,7 +11,7 @@ module GoCD
       @options = options
       @pipeline = @options[:pipeline_name]
       @stage = @options.delete(:stage_name)
-      @cache = PStore.new(File.expand_path(File.join(File.dirname(__FILE__), '..', '.last_green_builder_fetcher_cache')))
+      @cache = PStore.new(File.expand_path('./.last_green_build_fetcher_cache'))
       @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id))
       if @options[:latest_atom_entry_id].nil? && ENV['QUIET'].nil?
         puts "Retrieving the feed for #{@options[:pipeline_name]}/#{@stage} for the first time.  This could take quite awhile for pipelines with lots of history."
