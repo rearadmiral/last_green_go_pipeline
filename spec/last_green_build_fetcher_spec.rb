@@ -45,12 +45,36 @@ describe GoCD::LastGreenBuildFetcher do
       end
     end
 
+    describe "after first fetch" do
+
+      before(:each) do
+
+        @fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+
+        MockGoApiClient.canned_return_value = {
+          pipelines: [green_pipeline],
+        }
+
+        @last_known_time = @fetcher.fetch
+        expect(@last_known_time).not_to be_nil
+
+        MockGoApiClient.canned_return_value = {
+          pipelines: []
+        }
+
+      end
+
+      it "returns last known time" do
+        expect(@fetcher.fetch).to eq(@last_known_time)
+      end
+
+    end
+
     describe "with no pipeline history" do
 
       before(:each) do
         MockGoApiClient.canned_return_value = {
           pipelines: [],
-          latest_atom_entry_id: 'ignore'
         }
       end
 
@@ -65,8 +89,7 @@ describe GoCD::LastGreenBuildFetcher do
 
       before(:each) do
         MockGoApiClient.canned_return_value = {
-          pipelines: [red_pipeline],
-          latest_atom_entry_id: 'ignore'
+          pipelines: [red_pipeline]
         }
       end
 
@@ -79,8 +102,7 @@ describe GoCD::LastGreenBuildFetcher do
 
     it "finds most recent passing stage" do
       MockGoApiClient.canned_return_value = {
-                                          pipelines: [red_pipeline, green_pipeline].reverse,
-                                          latest_atom_entry_id: 'ignore'
+                                          pipelines: [red_pipeline, green_pipeline].reverse
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
       expect(fetcher.fetch).to eq Time.parse('2013-02-11 14:19:00')
