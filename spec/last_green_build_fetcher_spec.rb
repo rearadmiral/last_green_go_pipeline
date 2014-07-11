@@ -106,13 +106,22 @@ describe GoCD::LastGreenBuildFetcher do
         PStore.new(cache_file)
       end
 
+      it "will be used to populate the fetcher params" do
+        cache.transaction { cache['XYZ'] = { latest_atom_entry_id: 'http://go01.thoughtworks.com/feed/pipeline/XYZ/123.xml' }; cache.commit; }
+        MockGoApiClient.canned_return_value = {
+          pipelines: [red_pipeline],
+          latest_atom_entry_id: 'http://go01.thoughtworks.com/feed/pipeline/XYZ/124.xml'
+        }
+        GoCD::LastGreenBuildFetcher.new(pipeline_name: 'XYZ', stage_name: 'acceptance').fetch
+        expect(MockGoApiClient.last_params).to include(latest_atom_entry_id: 'http://go01.thoughtworks.com/feed/pipeline/XYZ/123.xml')
+      end
+
       it "contains the latest atom id" do
         MockGoApiClient.canned_return_value = {
           pipelines: [red_pipeline],
           latest_atom_entry_id: 'osito'
         }
-        fetcher = GoCD::LastGreenBuildFetcher.new(pipeline_name: 'cached', stage_name: 'acceptance')
-        fetcher.fetch
+        GoCD::LastGreenBuildFetcher.new(pipeline_name: 'cached', stage_name: 'acceptance').fetch
         expect(cache.transaction(true) { cache['cached'][:latest_atom_entry_id] }).to eq 'osito'
       end
 
