@@ -100,6 +100,24 @@ describe GoCD::LastGreenBuildFetcher do
 
     end
 
+    describe "the cache file" do
+
+      let(:cache) do
+        PStore.new(cache_file)
+      end
+
+      it "contains the latest atom id" do
+        MockGoApiClient.canned_return_value = {
+          pipelines: [red_pipeline],
+          latest_atom_entry_id: 'osito'
+        }
+        fetcher = GoCD::LastGreenBuildFetcher.new(pipeline_name: 'cached', stage_name: 'acceptance')
+        fetcher.fetch
+        expect(cache.transaction(true) { cache['cached'][:latest_atom_entry_id] }).to eq 'osito'
+      end
+
+    end
+
     it "finds most recent passing stage" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse
