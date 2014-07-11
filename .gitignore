@@ -1,4 +1,4 @@
-lib/.last_green_builder_fetcher_cache
+.last_green_build_fetcher_cache
 *.gem
 *.rbc
 /.config
