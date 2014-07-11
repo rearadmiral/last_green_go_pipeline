@@ -6,7 +6,7 @@ require 'bundler/version'
 
 Gem::Specification.new do |s|
   s.name        = "last_green_go_pipeline"
-  s.version     = "1.0.4"
+  s.version     = "1.0.5"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Bill DePhillips"]
   s.email       = ["bill.dephillips@gmail.com"]
