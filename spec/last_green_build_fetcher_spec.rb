@@ -1,4 +1,4 @@
-require_relative '../lib/last_green_build_fetcher'
+require_relative '../lib/go_cd/last_green_build_fetcher'
 require 'ostruct'
 
 class MockGoApiClient
@@ -22,7 +22,7 @@ class MockGoApiClient
 
 end
 
-describe LastGreenBuildFetcher do
+describe GoCD::LastGreenBuildFetcher do
 
   describe "with mock go api" do
 
@@ -42,7 +42,7 @@ describe LastGreenBuildFetcher do
                                           pipelines: [red_pipeline, green_pipeline].reverse,
                                           latest_atom_entry_id: 'ignore'
                                         }
-      fetcher = LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
       last_green_build_time = fetcher.fetch
       expect(last_green_build_time).to eq Time.parse('2013-02-11 14:19:00')
     end
