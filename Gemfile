@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'go_api_client', git: 'https://github.com/rearadmiral/go-api-client.git', branch: 'master'
+gem 'go_cd_feed'
 
 group :test do
   gem 'rspec'
