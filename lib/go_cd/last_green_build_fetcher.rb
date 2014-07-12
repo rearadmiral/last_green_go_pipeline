@@ -3,6 +3,7 @@ Bundler.setup
 require 'go_api_client'
 require 'pstore'
 require 'benchmark'
+require_relative 'green_build'
 
 module GoCD
   class LastGreenBuildFetcher
@@ -14,7 +15,7 @@ module GoCD
       @cache = PStore.new(File.expand_path('./.last_green_build_fetcher_cache'))
       @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id))
       if @options[:latest_atom_entry_id].nil? && ENV['QUIET'].nil?
-        puts "Retrieving the feed for #{@options[:pipeline_name]}/#{@stage} for the first time.  This could take quite awhile for pipelines with lots of history."
+        puts "Retrieving the feed for #{@options[:pipeline_name]}/#{@stage} for the first time.  This could take awhile."
       end
     end
 
@@ -32,11 +33,11 @@ module GoCD
       pipelines.reverse.each do |pipeline|
         stage = pipeline.stages.find { |stage| stage.name == @stage }
         if stage && stage.result == 'Passed'
-          return stage.completed_at.tap { |time| remember(:latest_green_build_time, time) }
+          remember(:last_green_build, GreenBuild.new(stage.completed_at))
         end
       end
 
-      recall :latest_green_build_time
+      recall :last_green_build
     end
 
     private

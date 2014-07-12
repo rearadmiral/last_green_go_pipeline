@@ -55,7 +55,8 @@ describe GoCD::LastGreenBuildFetcher do
           pipelines: [green_pipeline],
         }
 
-        @last_known_time = @fetcher.fetch
+        last_green_build = @fetcher.fetch
+        @last_known_time = last_green_build.completed_at
         expect(@last_known_time).not_to be_nil
 
         MockGoApiClient.canned_return_value = {
@@ -65,7 +66,7 @@ describe GoCD::LastGreenBuildFetcher do
       end
 
       it "returns last known time" do
-        expect(@fetcher.fetch).to eq(@last_known_time)
+        expect(@fetcher.fetch.completed_at).to eq(@last_known_time)
       end
 
     end
@@ -132,7 +133,16 @@ describe GoCD::LastGreenBuildFetcher do
                                           pipelines: [red_pipeline, green_pipeline].reverse
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
-      expect(fetcher.fetch).to eq Time.parse('2013-02-11 14:19:00')
+      last_green_build = fetcher.fetch
+      expect(last_green_build.completed_at).to eq Time.parse('2013-02-11 14:19:00')
+    end
+
+    it "returns a GreenBuild object" do
+      MockGoApiClient.canned_return_value = {
+                                          pipelines: [red_pipeline, green_pipeline].reverse
+                                        }
+      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      expect(fetcher.fetch).to be_a(GoCD::GreenBuild)
     end
 
     after(:each) do
