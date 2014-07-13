@@ -13,7 +13,7 @@ module GoCD
       @pipeline = @options[:pipeline_name]
       @stage = @options.delete(:stage_name)
       @cache = PStore.new(File.expand_path('./.last_green_build_fetcher_cache'))
-      @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id))
+      @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id), :page_fetch_limit => 2)
       if @options[:latest_atom_entry_id].nil? && ENV['QUIET'].nil?
         puts "Retrieving the feed for #{@options[:pipeline_name]}/#{@stage} for the first time.  This could take awhile."
       end
@@ -33,7 +33,8 @@ module GoCD
       pipelines.reverse.each do |pipeline|
         stage = pipeline.stages.find { |stage| stage.name == @stage }
         if stage && stage.result == 'Passed'
-          remember(:last_green_build, GreenBuild.new(stage.completed_at))
+          stage.pipeline = pipeline
+          remember(:last_green_build, GreenBuild.new(stage))
         end
       end
 

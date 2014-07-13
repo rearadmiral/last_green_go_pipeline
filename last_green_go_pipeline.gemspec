@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project         = "last_green_go_pipeline"
 
   s.add_development_dependency "rspec", '~> 3.0'
-  s.add_runtime_dependency "go_cd_feed", '~> 1.0'
+  s.add_runtime_dependency "go_cd_feed", '~> 1.1'
 
   s.files        = Dir.glob("{lib}/**/*") + %w(LICENSE README.md)
   s.require_path = 'lib'

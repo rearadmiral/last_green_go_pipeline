@@ -137,7 +137,7 @@ describe GoCD::LastGreenBuildFetcher do
       expect(last_green_build.completed_at).to eq Time.parse('2013-02-11 14:19:00')
     end
 
-    it "returns a GreenBuild object" do
+    it "knows the materials of the last green build" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse
                                         }
