@@ -8,14 +8,16 @@ require_relative 'green_build'
 module GoCD
   class LastGreenBuildFetcher
 
+    PAGE_FETCH_LIMIT = 2
+
     def initialize(options)
       @options = options
       @pipeline = @options[:pipeline_name]
       @stage = @options.delete(:stage_name)
       @cache = PStore.new(File.expand_path('./.last_green_build_fetcher_cache'))
-      @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id), :page_fetch_limit => 2)
+      @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id), :page_fetch_limit => PAGE_FETCH_LIMIT)
       if @options[:latest_atom_entry_id].nil? && ENV['QUIET'].nil?
-        puts "Retrieving the feed for #{@options[:pipeline_name]}/#{@stage} for the first time.  This could take awhile."
+        puts "Retrieving the the first #{PAGE_FETCH_LIMIT} feed pages for #{@options[:pipeline_name]}/#{@stage}."
       end
     end
 
