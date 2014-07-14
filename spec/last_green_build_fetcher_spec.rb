@@ -137,6 +137,13 @@ describe GoCD::LastGreenBuildFetcher do
       expect(last_green_build.completed_at).to eq Time.parse('2013-02-11 14:19:00')
     end
 
+    it "knows the instance of the pipeline" do
+      MockGoApiClient.canned_return_value = { pipelines: [green_pipeline] }
+      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      last_green_build = fetcher.fetch
+      expect(last_green_build.instance).to eq 'osito/3/acceptance/1'
+    end
+
     it "knows the materials of the last green build" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse
@@ -172,6 +179,8 @@ describe GoCD::LastGreenBuildFetcher do
 
   let (:green_pipeline) do
     OpenStruct.new.tap do |pipeline|
+      pipeline.name = 'osito'
+      pipeline.counter = 3
       pipeline.stages = [OpenStruct.new(
                             name: 'unit',
                             result: 'Passed',
@@ -179,7 +188,9 @@ describe GoCD::LastGreenBuildFetcher do
                          OpenStruct.new(
                              name: 'acceptance',
                              result: 'Passed',
-                             completed_at: Time.parse('2013-02-11 14:19:00'))
+                             completed_at: Time.parse('2013-02-11 14:19:00'),
+                             counter: 1
+                            )
                            ]
     end
   end
