@@ -130,7 +130,7 @@ describe GoCD::LastGreenBuildFetcher do
 
     it "finds most recent passing stage" do
       MockGoApiClient.canned_return_value = {
-                                          pipelines: [red_pipeline, green_pipeline].reverse
+                                          pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
       last_green_build = fetcher.fetch
@@ -161,11 +161,11 @@ describe GoCD::LastGreenBuildFetcher do
       pipeline.stages = [OpenStruct.new(
                             name: 'unit',
                             result: 'Passed',
-                            completed_at: Time.parse('2013-02-10 11:40:00')),
+                            completed_at: Time.parse('2013-02-12 11:40:00')),
                          OpenStruct.new(
                             name: 'acceptance',
                             result: 'Failed',
-                            completed_at: Time.parse('2013-02-10 11:45:00'))
+                            completed_at: Time.parse('2013-02-12 11:45:00'))
                           ]
     end
   end
@@ -184,5 +184,18 @@ describe GoCD::LastGreenBuildFetcher do
     end
   end
 
+  let (:older_green_pipeline) do
+    OpenStruct.new.tap do |pipeline|
+      pipeline.stages = [OpenStruct.new(
+                            name: 'unit',
+                            result: 'Passed',
+                            completed_at: Time.parse('2013-02-10 14:10:00')),
+                         OpenStruct.new(
+                             name: 'acceptance',
+                             result: 'Passed',
+                             completed_at: Time.parse('2013-02-10 14:19:00'))
+                           ]
+    end
+  end
 
 end

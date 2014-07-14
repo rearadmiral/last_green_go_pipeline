@@ -36,7 +36,7 @@ module GoCD
         stage = pipeline.stages.find { |stage| stage.name == @stage }
         if stage && stage.result == 'Passed'
           stage.pipeline = pipeline
-          remember(:last_green_build, GreenBuild.new(stage))
+          return remember(:last_green_build, GreenBuild.new(stage))
         end
       end
 
@@ -53,6 +53,7 @@ module GoCD
           @cache[@pipeline] = { key => value }
         end
       end
+      value
     end
 
     def recall(key)
