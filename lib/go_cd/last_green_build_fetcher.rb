@@ -21,7 +21,7 @@ module GoCD
       end
     end
 
-    def fetch
+    def fetch(filters={})
       feed = nil
       ms = Benchmark.realtime do
         feed = GoApiClient.runs(@options)
@@ -29,21 +29,29 @@ module GoCD
       puts "fetched pipeline runs in #{ms/1000}sec" unless ENV['QUIET']
 
       pipelines = feed[:pipelines]
-      remember(:latest_atom_entry_id, feed[:latest_atom_entry_id])
       puts "Checking for last green run of #{@stage}. Latest event: #{feed[:latest_atom_entry_id]}" unless ENV['QUIET']
 
-      pipelines.reverse.each do |pipeline|
-        stage = pipeline.stages.find { |stage| stage.name == @stage }
-        if stage && stage.result == 'Passed'
-          stage.pipeline = pipeline
-          return remember(:last_green_build, GreenBuild.new(stage))
-        end
+      find_green_stage(pipelines: pipelines, filters: filters).tap do |stage|
+        remember(:last_green_build, GreenBuild.new(stage)) if stage
       end
 
+      remember(:latest_atom_entry_id, feed[:latest_atom_entry_id])
       recall :last_green_build
     end
 
     private
+
+    def find_green_stage(params)
+      pipelines = params.delete(:pipelines)
+      pipelines.reverse.each do |pipeline|
+        stage = pipeline.stages.find { |stage| stage.name == @stage }
+        if stage && stage.result == 'Passed'
+          stage.pipeline = pipeline
+          return stage
+        end
+      end
+      return nil
+    end
 
     def remember(key, value)
       @cache.transaction do

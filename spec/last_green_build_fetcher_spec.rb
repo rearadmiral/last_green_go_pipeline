@@ -128,6 +128,15 @@ describe GoCD::LastGreenBuildFetcher do
 
     end
 
+    # it "finds most recent passing stage filtered by materials" do
+    #   MockGoApiClient.canned_return_value = {
+    #                                       pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
+    #                                     }
+    #   fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+    #   last_green_build = fetcher.fetch(materials: [{'upstream' => 'upstream/2/ready_for_prod/3'}])
+    #   expect(last_green_build.completed_at).to eq older_green_pipeline.completed_at
+    # end
+
     it "finds most recent passing stage" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
