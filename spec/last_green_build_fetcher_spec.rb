@@ -151,6 +151,13 @@ describe GoCD::LastGreenBuildFetcher do
       expect(last_green_build.pipeline_name).to eq 'osito'
     end
 
+    it "knows the pipeline counter" do
+      MockGoApiClient.canned_return_value = { pipelines: [green_pipeline] }
+      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      last_green_build = fetcher.fetch
+      expect(last_green_build.pipeline_counter).to eq 3
+    end
+
     it "knows the materials of the last green build" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse
