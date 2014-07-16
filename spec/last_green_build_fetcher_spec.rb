@@ -128,16 +128,16 @@ describe GoCD::LastGreenBuildFetcher do
 
     end
 
-    it "finds most recent passing stage filtered by materials" do
+    it "finds most recent passing stage that matches all filters" do
       MockGoApiClient.canned_return_value = {
-                                          pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
+        pipelines: [red_pipeline, green_pipeline, older_green_pipeline, even_older_green_pipeline].reverse
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
-      last_green_build = fetcher.fetch(dependencies: {'upstream-pipeline' => 'upstream-pipeline/2/ready_for_prod/3'})
-      expect(last_green_build.completed_at).to eq older_green_pipeline.stages.last.completed_at
+      last_green_build = fetcher.fetch(dependencies: {'upstream-pipeline' => 'upstream-pipeline/2/ready_for_prod/3'}, materials: { 'repo-git' => '000000'})
+      expect(last_green_build.completed_at).to eq even_older_green_pipeline.stages.last.completed_at
     end
 
-    it "finds nil if filter does not match any stages" do
+    it "finds nil if no stages match ALL filters" do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
                                         }
@@ -250,12 +250,33 @@ describe GoCD::LastGreenBuildFetcher do
     end
   end
 
+  let (:even_older_green_pipeline) do
+    OpenStruct.new(materials: even_older_materials, dependencies: older_dependencies).tap do |pipeline|
+      pipeline.stages = [OpenStruct.new(
+                            name: 'unit',
+                            result: 'Passed',
+                                        completed_at: Time.parse('2013-02-09 12:10:00'),
+                                        pipeline: pipeline),
+                         OpenStruct.new(
+                             name: 'acceptance',
+                             result: 'Passed',
+                                        completed_at: Time.parse('2013-02-09 13:19:00',
+                                                                 pipeline: pipeline))
+                        ]
+    end
+  end
+
+
   let (:materials) do
     [OpenStruct.new(commits: [OpenStruct.new(revision: 'xyz456')], repository_url: 'http://go.bonito.org/git/repo')]
   end
 
   let (:older_materials) do
     [OpenStruct.new(commits: [OpenStruct.new(revision: 'abc123')], repository_url: 'http://go.bonito.org/git/repo')]
+  end
+
+  let (:even_older_materials) do
+    [OpenStruct.new(commits: [OpenStruct.new(revision: '000000')], repository_url: 'http://go.bonito.org/git/repo')]
   end
 
 

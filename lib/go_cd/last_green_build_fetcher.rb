@@ -55,12 +55,20 @@ module GoCD
     end
 
     def matches_filter(stage, filters)
-      return true unless filters && filters[:dependencies]
-      filters[:dependencies].all? do |upstream_name, upstream_instance|
+      return true unless filters && (filters[:dependencies] || filters[:materials])
+      meets_dependencies_filter = (filters[:dependencies] || []).all? do |upstream_name, upstream_instance|
         stage.pipeline.dependencies.any? do |dependency|
           dependency.pipeline_name == upstream_name && dependency.identifier == upstream_instance
         end
       end
+      meets_materials_filter = (filters[:materials] || []).all? do |filtered_material_name, git_revision|
+        stage.pipeline.materials.any? do |git_material|
+          repo_name = git_material.repository_url.split('/').last
+          material_name = "#{repo_name}-git"
+          filtered_material_name == material_name && git_revision == git_material.commits.first.revision
+        end
+      end
+      meets_dependencies_filter && meets_materials_filter
     end
 
     def remember(key, value)
