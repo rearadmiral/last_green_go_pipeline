@@ -3,7 +3,7 @@ Bundler.setup
 require 'go_api_client'
 require 'pstore'
 require 'benchmark'
-require_relative 'green_build'
+require_relative 'stage_run'
 
 module GoCD
   class LastGreenBuildFetcher
@@ -32,7 +32,7 @@ module GoCD
       puts "Checking for last green run of #{@stage}. Latest event: #{feed[:latest_atom_entry_id]}" unless ENV['QUIET']
 
       find_green_stage(pipelines: pipelines, filters: filters).tap do |stage|
-        remember(:last_green_build, GreenBuild.new(stage)) if stage
+        remember(:last_green_build, StageRun.new(stage)) if stage
       end
 
       remember(:latest_atom_entry_id, feed[:latest_atom_entry_id])
@@ -43,6 +43,7 @@ module GoCD
 
     def find_green_stage(params)
       pipelines = params.delete(:pipelines)
+      filter = params.delete(:filters)
       pipelines.reverse.each do |pipeline|
         stage = pipeline.stages.find { |stage| stage.name == @stage }
         if stage && stage.result == 'Passed'

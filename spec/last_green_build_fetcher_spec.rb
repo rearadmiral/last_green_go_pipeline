@@ -134,7 +134,7 @@ describe GoCD::LastGreenBuildFetcher do
     #                                     }
     #   fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
     #   last_green_build = fetcher.fetch(materials: [{'upstream' => 'upstream/2/ready_for_prod/3'}])
-    #   expect(last_green_build.completed_at).to eq older_green_pipeline.completed_at
+    #   expect(last_green_build.completed_at).to eq older_green_pipeline.stages.last.completed_at
     # end
 
     it "finds most recent passing stage" do
@@ -172,7 +172,9 @@ describe GoCD::LastGreenBuildFetcher do
                                           pipelines: [red_pipeline, green_pipeline].reverse
                                         }
       fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
-      expect(fetcher.fetch).to be_a(GoCD::GreenBuild)
+      stage_run = fetcher.fetch
+      expect(stage_run.materials.size).to eq 1
+      expect(stage_run.dependencies.size).to eq 1
     end
 
     after(:each) do
@@ -190,46 +192,71 @@ describe GoCD::LastGreenBuildFetcher do
     OpenStruct.new.tap do |pipeline|
       pipeline.stages = [OpenStruct.new(
                             name: 'unit',
-                            result: 'Passed',
-                            completed_at: Time.parse('2013-02-12 11:40:00')),
+                                        result: 'Passed',
+                                        completed_at: Time.parse('2013-02-12 11:40:00'),
+                                        pipeline: pipeline),
                          OpenStruct.new(
                             name: 'acceptance',
                             result: 'Failed',
-                            completed_at: Time.parse('2013-02-12 11:45:00'))
+                                        completed_at: Time.parse('2013-02-12 11:45:00'),
+                                        pipeline: pipeline)
                           ]
     end
   end
 
   let (:green_pipeline) do
-    OpenStruct.new.tap do |pipeline|
+    OpenStruct.new(dependencies: dependencies, materials: materials).tap do |pipeline|
       pipeline.name = 'osito'
       pipeline.counter = 3
       pipeline.stages = [OpenStruct.new(
                             name: 'unit',
                             result: 'Passed',
-                            completed_at: Time.parse('2013-02-11 14:10:00')),
+                                        completed_at: Time.parse('2013-02-11 14:10:00'),
+                                        pipeline: pipeline),
                          OpenStruct.new(
                              name: 'acceptance',
-                             result: 'Passed',
+                                        result: 'Passed',
+
                              completed_at: Time.parse('2013-02-11 14:19:00'),
-                             counter: 1
+                                        counter: 1,
+                                        pipeline: pipeline
                             )
                            ]
     end
   end
 
   let (:older_green_pipeline) do
-    OpenStruct.new.tap do |pipeline|
+    OpenStruct.new(materials: older_materials, dependencies: older_dependencies).tap do |pipeline|
       pipeline.stages = [OpenStruct.new(
                             name: 'unit',
                             result: 'Passed',
-                            completed_at: Time.parse('2013-02-10 14:10:00')),
+                                        completed_at: Time.parse('2013-02-10 14:10:00'),
+                                        pipeline: pipeline),
                          OpenStruct.new(
                              name: 'acceptance',
                              result: 'Passed',
-                             completed_at: Time.parse('2013-02-10 14:19:00'))
-                           ]
+                                        completed_at: Time.parse('2013-02-10 14:19:00',
+                                                                 pipeline: pipeline))
+                        ]
     end
   end
+
+  let (:materials) do
+    [OpenStruct.new(commits: [OpenStruct.new(revision: 'xyz456')], repository_url: 'http://go.bonito.org/git/repo')]
+  end
+
+  let (:older_materials) do
+    [OpenStruct.new(commits: [OpenStruct.new(revision: 'abc123')], repository_url: 'http://go.bonito.org/git/repo')]
+  end
+
+
+  let(:dependencies) do
+    [OpenStruct.new(pipeline_name: 'upstream-pipeline', stage_name: 'ready_for_prod', identifier: 'upstream-pipeline/11/ready_for_prod/2')]
+  end
+
+  let(:older_dependencies) do
+    [OpenStruct.new(pipeline_name: 'upstream-pipeline', stage_name: 'ready_for_prod', identifier: 'upstream-pipeline/2/ready_for_prod/3')]
+  end
+
 
 end
