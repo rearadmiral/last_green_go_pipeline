@@ -48,10 +48,19 @@ module GoCD
         stage = pipeline.stages.find { |stage| stage.name == @stage }
         if stage && stage.result == 'Passed'
           stage.pipeline = pipeline
-          return stage
+          return stage if matches_filter(stage, filter)
         end
       end
       return nil
+    end
+
+    def matches_filter(stage, filters)
+      return true unless filters && filters[:dependencies]
+      filters[:dependencies].all? do |upstream_name, upstream_instance|
+        stage.pipeline.dependencies.any? do |dependency|
+          dependency.pipeline_name == upstream_name && dependency.identifier == upstream_instance
+        end
+      end
     end
 
     def remember(key, value)
