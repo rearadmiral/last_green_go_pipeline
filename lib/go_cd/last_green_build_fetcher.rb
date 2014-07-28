@@ -29,10 +29,10 @@ module GoCD
 
     def fetch(filters={})
       feed = nil
-      ms = Benchmark.realtime do
+      seconds = Benchmark.realtime do
         feed = GoApiClient.runs(@options)
       end
-      puts "fetched pipeline runs in #{ms/1000}sec" unless ENV['QUIET']
+      puts "[GoCD::LastGreenBuildFetcher] fetched pipeline runs in #{seconds}sec" unless ENV['QUIET']
 
       pipelines = feed[:pipelines]
       puts "Checking for last green run of #{@stage}. Latest event: #{feed[:latest_atom_entry_id]}" unless ENV['QUIET']
