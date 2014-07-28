@@ -25,7 +25,17 @@ end
 describe GoCD::LastGreenBuildFetcher do
 
   let(:cache_file) do
-    File.expand_path('./.last_green_build_fetcher_cache')
+    dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache")
+    FileUtils.mkdir_p(dir)
+    File.join(dir, "#{options[:host]}.pstore")
+  end
+
+  let(:options) do
+    {
+      pipeline_name: 'XYZ',
+      stage_name: 'acceptance',
+      host: 'go.bonito.org'
+    }
   end
 
   before(:each) do
@@ -49,7 +59,7 @@ describe GoCD::LastGreenBuildFetcher do
 
       before(:each) do
 
-        @fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+        @fetcher = GoCD::LastGreenBuildFetcher.new(options)
 
         MockGoApiClient.canned_return_value = {
           pipelines: [green_pipeline],
@@ -80,7 +90,7 @@ describe GoCD::LastGreenBuildFetcher do
       end
 
       it "returns nil" do
-        fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+        fetcher = GoCD::LastGreenBuildFetcher.new(options)
         expect(fetcher.fetch).to be nil
       end
 
@@ -95,7 +105,7 @@ describe GoCD::LastGreenBuildFetcher do
       end
 
       it "returns nils" do
-        fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+        fetcher = GoCD::LastGreenBuildFetcher.new(options)
         expect(fetcher.fetch).to be nil
       end
 
@@ -113,7 +123,7 @@ describe GoCD::LastGreenBuildFetcher do
           pipelines: [red_pipeline],
           latest_atom_entry_id: 'http://go01.thoughtworks.com/feed/pipeline/XYZ/124.xml'
         }
-        GoCD::LastGreenBuildFetcher.new(pipeline_name: 'XYZ', stage_name: 'acceptance').fetch
+        GoCD::LastGreenBuildFetcher.new(options).fetch
         expect(MockGoApiClient.last_params).to include(latest_atom_entry_id: 'http://go01.thoughtworks.com/feed/pipeline/XYZ/123.xml')
       end
 
@@ -122,7 +132,7 @@ describe GoCD::LastGreenBuildFetcher do
           pipelines: [red_pipeline],
           latest_atom_entry_id: 'osito'
         }
-        GoCD::LastGreenBuildFetcher.new(pipeline_name: 'cached', stage_name: 'acceptance').fetch
+        GoCD::LastGreenBuildFetcher.new(options.merge(pipeline_name: 'cached')).fetch
         expect(cache.transaction(true) { cache['cached'][:latest_atom_entry_id] }).to eq 'osito'
       end
 
@@ -132,7 +142,7 @@ describe GoCD::LastGreenBuildFetcher do
       MockGoApiClient.canned_return_value = {
         pipelines: [red_pipeline, green_pipeline, older_green_pipeline, even_older_green_pipeline].reverse
                                         }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch(dependencies: {'upstream-pipeline' => 'upstream-pipeline/2/ready_for_prod/3'}, materials: { 'repo-git' => '000000'})
       expect(last_green_build.completed_at).to eq even_older_green_pipeline.stages.last.completed_at
     end
@@ -141,7 +151,7 @@ describe GoCD::LastGreenBuildFetcher do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
                                         }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch(dependencies: {'upstream-pipeline' => 'upstream-pipeline/1/ready_for_prod/1'})
       expect(last_green_build).to be_nil
     end
@@ -150,28 +160,28 @@ describe GoCD::LastGreenBuildFetcher do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline, older_green_pipeline].reverse
                                         }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch
       expect(last_green_build.completed_at).to eq Time.parse('2013-02-11 14:19:00')
     end
 
     it "knows the instance of the pipeline" do
       MockGoApiClient.canned_return_value = { pipelines: [green_pipeline] }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch
       expect(last_green_build.instance).to eq 'osito/3/acceptance/1'
     end
 
     it "knows the pipeline name" do
       MockGoApiClient.canned_return_value = { pipelines: [green_pipeline] }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch
       expect(last_green_build.pipeline_name).to eq 'osito'
     end
 
     it "knows the pipeline counter" do
       MockGoApiClient.canned_return_value = { pipelines: [green_pipeline] }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       last_green_build = fetcher.fetch
       expect(last_green_build.pipeline_counter).to eq 3
     end
@@ -180,7 +190,7 @@ describe GoCD::LastGreenBuildFetcher do
       MockGoApiClient.canned_return_value = {
                                           pipelines: [red_pipeline, green_pipeline].reverse
                                         }
-      fetcher = GoCD::LastGreenBuildFetcher.new(stage_name: 'acceptance')
+      fetcher = GoCD::LastGreenBuildFetcher.new(options)
       stage_run = fetcher.fetch
       expect(stage_run.materials.size).to eq 1
       expect(stage_run.dependencies.size).to eq 1

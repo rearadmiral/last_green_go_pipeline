@@ -8,16 +8,22 @@ require_relative 'stage_run'
 module GoCD
   class LastGreenBuildFetcher
 
-    PAGE_FETCH_LIMIT = 2
+    PAGE_FETCH_LIMIT = 1
 
     def initialize(options)
       @options = options
       @pipeline = @options[:pipeline_name]
       @stage = @options.delete(:stage_name)
-      @cache = PStore.new(File.expand_path('./.last_green_build_fetcher_cache'))
+      cache_filename = @options[:cache_file] || default_cache_filename
+      if File.exists?(cache_filename)
+        log "[GoCD::LastGreenBuildFetcher] Reusing cache file: #{cache_filename}"
+      else
+        log "[GoCD::LastGreenBuildFetcher] Creating new cache file: #{cache_filename}"
+      end
+      @cache = PStore.new(cache_filename)
       @options.merge!(:latest_atom_entry_id => recall(:latest_atom_entry_id), :page_fetch_limit => PAGE_FETCH_LIMIT)
       if @options[:latest_atom_entry_id].nil? && ENV['QUIET'].nil?
-        puts "Retrieving the the first #{PAGE_FETCH_LIMIT} feed pages for #{@options[:pipeline_name]}/#{@stage}."
+        puts "Retrieving the the latest #{PAGE_FETCH_LIMIT} page(s) of the Go event feed for #{@options[:pipeline_name]}/#{@stage}."
       end
     end
 
@@ -40,6 +46,16 @@ module GoCD
     end
 
     private
+
+    def log(msg)
+      puts msg unless ENV['QUIET']
+    end
+
+    def default_cache_filename
+      dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache")
+      FileUtils.mkdir_p(dir)
+      File.join(dir, "#{@options[:host]}.pstore")
+    end
 
     def find_green_stage(params)
       pipelines = params.delete(:pipelines)
