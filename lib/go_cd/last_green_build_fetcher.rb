@@ -2,6 +2,7 @@ require 'go_api_client'
 require 'pstore'
 require 'benchmark'
 require_relative 'stage_run'
+require 'fileutils'
 
 module GoCD
   class LastGreenBuildFetcher
