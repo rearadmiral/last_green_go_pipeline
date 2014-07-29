@@ -1,5 +1,3 @@
-require 'bundler'
-Bundler.setup
 require 'go_api_client'
 require 'pstore'
 require 'benchmark'
