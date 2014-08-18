@@ -25,9 +25,9 @@ end
 describe GoCD::LastGreenBuildFetcher do
 
   let(:cache_file) do
-    dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache")
+    dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache", options[:host])
     FileUtils.mkdir_p(dir)
-    File.join(dir, "#{options[:host]}.pstore")
+    File.join(dir, "#{options[:pipeline_name]}.pstore")
   end
 
   let(:options) do
@@ -132,8 +132,8 @@ describe GoCD::LastGreenBuildFetcher do
           pipelines: [red_pipeline],
           latest_atom_entry_id: 'osito'
         }
-        GoCD::LastGreenBuildFetcher.new(options.merge(pipeline_name: 'cached')).fetch
-        expect(cache.transaction(true) { cache['cached'][:latest_atom_entry_id] }).to eq 'osito'
+        GoCD::LastGreenBuildFetcher.new(options).fetch
+        expect(cache.transaction(true) { cache['XYZ'][:latest_atom_entry_id] }).to eq 'osito'
       end
 
     end
