@@ -51,9 +51,9 @@ module GoCD
     end
 
     def default_cache_filename
-      dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache", @options[:host])
+      dir = File.join(ENV['HOME'], ".last-green-go-pipeline-cache")
       FileUtils.mkdir_p(dir)
-      File.join(dir, "#{@pipeline}.pstore")
+      File.join(dir, "#{@options[:host]}.pstore")
     end
 
     def find_green_stage(params)
